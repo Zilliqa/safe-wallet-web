@@ -15,6 +15,10 @@ export const OVERVIEW_EVENTS = {
     action: 'Show Safe QR code',
     category: OVERVIEW_CATEGORY,
   },
+  SUGGESTIONS: {
+    action: 'Suggest any new Feature',
+    category: OVERVIEW_CATEGORY,
+  },
   COPY_ADDRESS: {
     action: 'Copy Safe address',
     category: OVERVIEW_CATEGORY,
