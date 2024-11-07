@@ -7,7 +7,7 @@ import {
   SidebarListItemIcon,
   SidebarListItemText,
 } from '@/components/sidebar/SidebarList'
-import { /* BEAMER_SELECTOR, */ loadBeamer } from '@/services/beamer'
+import { /* BEAMER_SELECTOR, */ BEAMER_SELECTOR, loadBeamer } from '@/services/beamer'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { CookieAndTermType, hasConsentFor } from '@/store/cookiesAndTermsSlice'
 import { openCookieBanner } from '@/store/popupSlice'
@@ -15,11 +15,12 @@ import { openCookieBanner } from '@/store/popupSlice'
 import HelpCenterIcon from '@/public/images/sidebar/help-center.svg'
 import { Link, ListItem, SvgIcon, Typography } from '@mui/material'
 import DebugToggle from '../DebugToggle'
-import { HELP_CENTER_URL, IS_PRODUCTION } from '@/config/constants'
+import { HELP_CENTER_URL, IS_PRODUCTION, NEW_SUGGESTION_FORM } from '@/config/constants'
 import Track from '@/components/common/Track'
 import { OVERVIEW_EVENTS } from '@/services/analytics/events/overview'
 import { useCurrentChain } from '@/hooks/useChains'
 import darkPalette from '@/components/theme/darkPalette'
+import SuggestionIcon from '@/public/images/sidebar/lightbulb_icon.svg'
 import ProtofireLogo from '@/public/images/protofire-logo.svg'
 
 const SidebarFooter = (): ReactElement => {
@@ -71,6 +72,22 @@ const SidebarFooter = (): ReactElement => {
               <SidebarListItemText data-testid="list-item-need-help" bold>
                 Need help?
               </SidebarListItemText>
+            </SidebarListItemButton>
+          </a>
+        </ListItem>
+      </Track>
+      <Track {...OVERVIEW_EVENTS.SUGGESTIONS}>
+        <ListItem disablePadding>
+          <a target="_blank" rel="noopener noreferrer" href={NEW_SUGGESTION_FORM} style={{ width: '100%' }}>
+            <SidebarListItemButton
+              id={BEAMER_SELECTOR}
+              style={{ backgroundColor: '#12FF80', color: 'black' }}
+              onClick={handleBeamer}
+            >
+              <SidebarListItemIcon color="primary">
+                <SuggestionIcon />
+              </SidebarListItemIcon>
+              <SidebarListItemText bold>New Features Suggestion?</SidebarListItemText>
             </SidebarListItemButton>
           </a>
         </ListItem>
