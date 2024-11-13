@@ -7,7 +7,7 @@ import {
   SidebarListItemIcon,
   SidebarListItemText,
 } from '@/components/sidebar/SidebarList'
-import { /* BEAMER_SELECTOR, */ BEAMER_SELECTOR, loadBeamer } from '@/services/beamer'
+import { /* BEAMER_SELECTOR, */ loadBeamer } from '@/services/beamer'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { CookieAndTermType, hasConsentFor } from '@/store/cookiesAndTermsSlice'
 import { openCookieBanner } from '@/store/popupSlice'
@@ -20,7 +20,7 @@ import Track from '@/components/common/Track'
 import { OVERVIEW_EVENTS } from '@/services/analytics/events/overview'
 import { useCurrentChain } from '@/hooks/useChains'
 import darkPalette from '@/components/theme/darkPalette'
-import SuggestionIcon from '@/public/images/sidebar/lightbulb_icon.svg'
+//import SuggestionIcon from '@/public/images/sidebar/lightbulb_icon.svg'
 import ProtofireLogo from '@/public/images/protofire-logo.svg'
 
 const SidebarFooter = (): ReactElement => {
@@ -76,7 +76,7 @@ const SidebarFooter = (): ReactElement => {
           </a>
         </ListItem>
       </Track>
-      <Track {...OVERVIEW_EVENTS.SUGGESTIONS}>
+      {/* <Track {...OVERVIEW_EVENTS.SUGGESTIONS}>
         <ListItem disablePadding>
           <a target="_blank" rel="noopener noreferrer" href={NEW_SUGGESTION_FORM} style={{ width: '100%' }}>
             <SidebarListItemButton
@@ -91,7 +91,7 @@ const SidebarFooter = (): ReactElement => {
             </SidebarListItemButton>
           </a>
         </ListItem>
-      </Track>
+      </Track> */}
       <ListItem>
         <SidebarListItemText>
           <Typography variant="caption">
