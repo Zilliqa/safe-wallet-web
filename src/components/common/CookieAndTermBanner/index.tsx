@@ -88,11 +88,11 @@ export const CookieAndTermBanner = ({
           <Grid item xs>
             <Typography variant="body2" mb={2}>
               By browsing this page, you accept our{' '}
-              <Link href={AppRoutes.terms} passHref legacyBehavior style={{ textDecoration: 'underline' }}>
+              <Link href={AppRoutes.terms} style={{ textDecoration: 'underline' }}>
                 Terms & Conditions
               </Link>{' '}
               (last updated October 2024) and the use of necessary cookies.{' '}
-              <Link href={AppRoutes.cookie} passHref legacyBehavior style={{ textDecoration: 'underline' }}>
+              <Link href={AppRoutes.cookie} style={{ textDecoration: 'underline' }}>
                 Cookie policy
               </Link>{' '}
             </Typography>
