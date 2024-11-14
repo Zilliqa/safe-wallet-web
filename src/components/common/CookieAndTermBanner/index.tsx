@@ -87,7 +87,7 @@ export const CookieAndTermBanner = ({
         <Grid container alignItems="center">
           <Grid item xs>
             <Typography variant="body2" mb={2}>
-              By browsing this page, you accept our
+              By browsing this page, you accept our{' '}
               <Link href={AppRoutes.terms} passHref legacyBehavior>
                 Terms & Conditions
               </Link>{' '}
