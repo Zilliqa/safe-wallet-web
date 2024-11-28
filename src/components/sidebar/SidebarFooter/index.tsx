@@ -16,7 +16,6 @@ import HelpCenterIcon from '@/public/images/sidebar/help-center.svg'
 import { Link, ListItem, SvgIcon, Typography } from '@mui/material'
 import DebugToggle from '../DebugToggle'
 import { HELP_CENTER_URL, IS_PRODUCTION, NEW_SUGGESTION_FORM } from '@/config/constants'
-import { HELP_CENTER_URL, IS_PRODUCTION, NEW_SUGGESTION_FORM } from '@/config/constants'
 import Track from '@/components/common/Track'
 import { OVERVIEW_EVENTS } from '@/services/analytics/events/overview'
 import { useCurrentChain } from '@/hooks/useChains'
@@ -80,11 +79,7 @@ const SidebarFooter = (): ReactElement => {
       <Track {...OVERVIEW_EVENTS.SUGGESTIONS}>
         <ListItem disablePadding>
           <a target="_blank" rel="noopener noreferrer" href={NEW_SUGGESTION_FORM} style={{ width: '100%' }}>
-            <SidebarListItemButton
-              id={BEAMER_SELECTOR}
-              style={{ backgroundColor: '#12FF80', color: 'black' }}
-              onClick={handleBeamer}
-            >
+            <SidebarListItemButton id={BEAMER_SELECTOR} style={{ backgroundColor: '#12FF80', color: 'black' }}>
               <SidebarListItemIcon color="primary">
                 <SuggestionIcon />
               </SidebarListItemIcon>
