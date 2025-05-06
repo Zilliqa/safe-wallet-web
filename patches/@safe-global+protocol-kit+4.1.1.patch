@@ -1,0 +1,12 @@
+diff --git a/node_modules/@safe-global/protocol-kit/dist/src/utils/eip-3770/config.js b/node_modules/@safe-global/protocol-kit/dist/src/utils/eip-3770/config.js
+index 00ae69d..04ac499 100644
+--- a/node_modules/@safe-global/protocol-kit/dist/src/utils/eip-3770/config.js
++++ b/node_modules/@safe-global/protocol-kit/dist/src/utils/eip-3770/config.js
+@@ -201,6 +201,7 @@ exports.networks = [
+     { chainId: 23295n, shortName: 'sapphire-testnet' },
+     { chainId: 28979n, shortName: 'kimbonet-testnet' },
+     { chainId: 32769n, shortName: 'zil' },
++    { chainId: 32770n, shortName: 'zq2-proto-mainnet' },
+     { chainId: 33101n, shortName: 'zil-testnet' },
+     { chainId: 33401n, shortName: 'slingshot' },
+     { chainId: 34443n, shortName: 'mode' },
