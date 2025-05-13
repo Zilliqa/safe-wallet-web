@@ -8,11 +8,7 @@ const EnvironmentVariablesPage: NextPage = () => {
   return (
     <>
       <Head>
-<<<<<<< HEAD:src/pages/settings/environment-variables.tsx
-        <title>{'Zilliqa Safe – Settings – Environment variables'}</title>
-=======
         <title>{`${BRAND_NAME} – Settings – Environment variables`}</title>
->>>>>>> v1.51.3:apps/web/src/pages/settings/environment-variables.tsx
       </Head>
 
       <SettingsHeader />

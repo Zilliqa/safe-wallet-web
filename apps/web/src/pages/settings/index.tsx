@@ -18,11 +18,7 @@ const Settings: NextPage = () => {
   return (
     <>
       <Head>
-<<<<<<< HEAD:src/pages/settings/index.tsx
-        <title>{'Zilliqa Safe – Settings'}</title>
-=======
         <title>{`${BRAND_NAME} – Settings`}</title>
->>>>>>> v1.51.3:apps/web/src/pages/settings/index.tsx
       </Head>
     </>
   )

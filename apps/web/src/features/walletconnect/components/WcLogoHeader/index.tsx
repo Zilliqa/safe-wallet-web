@@ -14,11 +14,7 @@ const WcLogoHeader = ({ errorMessage }: { errorMessage?: string }): ReactElement
       </div>
 
       <Typography variant="h5" mt={2} mb={0.5} className={css.title}>
-<<<<<<< HEAD:src/features/walletconnect/components/WcLogoHeader/index.tsx
-        {errorMessage || 'Connect dApps to Zilliqa Safe'}
-=======
         {errorMessage || `Connect dApps to ${BRAND_NAME}`}
->>>>>>> v1.51.3:apps/web/src/features/walletconnect/components/WcLogoHeader/index.tsx
       </Typography>
     </>
   )

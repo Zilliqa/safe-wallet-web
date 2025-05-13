@@ -24,11 +24,7 @@ const AddOwner: NextPage = () => {
   return (
     <>
       <Head>
-<<<<<<< HEAD:src/pages/addOwner.tsx
-        <title>{'Zilliqa Safe – Add Signer'}</title>
-=======
         <title>{`${BRAND_NAME} – Add Signer`}</title>
->>>>>>> v1.51.3:apps/web/src/pages/addOwner.tsx
       </Head>
     </>
   )

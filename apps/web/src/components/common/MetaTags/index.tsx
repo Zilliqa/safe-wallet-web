@@ -3,13 +3,8 @@ import { ContentSecurityPolicy, StrictTransportSecurity } from '@/config/securit
 import lightPalette from '@/components/theme/lightPalette'
 import darkPalette from '@/components/theme/darkPalette'
 
-<<<<<<< HEAD:src/components/common/MetaTags/index.tsx
-const descriptionText = 'Zilliqa Safe is the most trusted platform to manage digital assets on Zilliqa EVM.'
-const titleText = 'Zilliqa Safe'
-=======
 const descriptionText = `${BRAND_NAME} is the most trusted smart account wallet on Ethereum with over $100B secured.`
 const titleText = BRAND_NAME
->>>>>>> v1.51.3:apps/web/src/components/common/MetaTags/index.tsx
 
 const MetaTags = ({ prefetchUrl }: { prefetchUrl: string }) => (
   <>
