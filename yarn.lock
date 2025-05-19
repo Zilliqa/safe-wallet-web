@@ -7479,10 +7479,10 @@ __metadata:
 
 "@safe-global/safe-deployments@patch:@safe-global/safe-deployments@npm%3A1.37.28#~/.yarn/patches/@safe-global-safe-deployments-npm-1.37.28-060d6063bb.patch":
   version: 1.37.28
-  resolution: "@safe-global/safe-deployments@patch:@safe-global/safe-deployments@npm%3A1.37.28#~/.yarn/patches/@safe-global-safe-deployments-npm-1.37.28-060d6063bb.patch::version=1.37.28&hash=52cc6e"
+  resolution: "@safe-global/safe-deployments@patch:@safe-global/safe-deployments@npm%3A1.37.28#~/.yarn/patches/@safe-global-safe-deployments-npm-1.37.28-060d6063bb.patch::version=1.37.28&hash=294a3a"
   dependencies:
     semver: "npm:^7.6.2"
-  checksum: 10/129128182976eeae1fb8d3eb7ff31fa29a249dffeb69a78af23d537c421af80e5516755a5298ccbe57052d5559b1d2b50ff06d75a91057222779cf3b7ab2ef37
+  checksum: 10/30b12d080230b8684dc57230a65630787b3412b226bf7e43ab46a43d6b4ce47c1ff15ae5d63012757a3bdd7ad2e72e418f5e9f6a9d46fb779b4802b8e29fbb63
   languageName: node
   linkType: hard
 
