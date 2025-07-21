@@ -51,6 +51,30 @@ const GasMultipliers = {
   [chains.zksync]: 20,
 }
 
+// Chain-specific gas adjustments for networks with common gas issues
+const getChainSpecificGasAdjustment = (chainId: string, safeTx: SafeTransaction): number => {
+  // Base multiplier
+  let adjustment = 1.0
+
+  // Specific adjustments for known problematic chains
+  switch (chainId) {
+    case chains.gno:
+      adjustment = 1.3
+      break
+    case chains.zksync:
+      adjustment = 20
+      break
+    // Add more chains as needed
+    default:
+      // For other chains, add small buffer for complex transactions
+      if (safeTx.data.data && safeTx.data.data.length > 500) {
+        adjustment = 1.1 // 10% buffer for complex transactions on other chains
+      }
+  }
+
+  return adjustment
+}
+
 const incrementByGasMultiplier = (value: bigint, multiplier: number) => {
   return (value * BigInt(100 * multiplier)) / BigInt(100)
 }
@@ -58,8 +82,31 @@ const incrementByGasMultiplier = (value: bigint, multiplier: number) => {
 // Retry configuration
 const RETRY_ATTEMPTS = 3
 const RETRY_DELAY_BASE = 1000 // 1 second
-const SAFETY_BUFFER_MULTIPLIER = 1.2 // 20% safety buffer
+const SAFETY_BUFFER_MULTIPLIER = 1.3 // Increased from 1.2 to 1.3 (30% safety buffer)
 const CONSERVATIVE_GAS_LIMIT = 500000n // Conservative fallback gas limit
+
+// Dynamic safety buffer based on transaction complexity
+const getDynamicSafetyBuffer = (safeTx: SafeTransaction): number => {
+  // Base safety buffer
+  let buffer = SAFETY_BUFFER_MULTIPLIER
+
+  // Increase buffer for complex transactions (more data)
+  if (safeTx.data.data && safeTx.data.data.length > 1000) {
+    buffer += 0.1 // Additional 10% for complex transactions
+  }
+
+  // Increase buffer for value transfers
+  if (safeTx.data.value && safeTx.data.value !== '0') {
+    buffer += 0.05 // Additional 5% for value transfers
+  }
+
+  // Increase buffer for contract interactions (non-zero data)
+  if (safeTx.data.data && safeTx.data.data !== '0x') {
+    buffer += 0.1 // Additional 10% for contract interactions
+  }
+
+  return Math.min(buffer, 1.5) // Cap at 50% buffer
+}
 
 // Exponential backoff delay
 const getRetryDelay = (attempt: number): number => {
@@ -69,6 +116,32 @@ const getRetryDelay = (attempt: number): number => {
 // Sleep utility
 const sleep = (ms: number): Promise<void> => {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+// Detect gas-related errors and provide better error messages
+const isGasLimitError = (error: any): boolean => {
+  const errorMessage = error?.message?.toLowerCase() || ''
+  const errorReason = error?.reason?.toLowerCase() || ''
+
+  return (
+    errorMessage.includes('gas') ||
+    errorMessage.includes('gas limit') ||
+    errorMessage.includes('call gas cost exceeds') ||
+    errorReason.includes('gas') ||
+    errorReason.includes('gas limit') ||
+    errorReason.includes('call gas cost exceeds')
+  )
+}
+
+// Enhanced error handling for gas estimation
+const handleGasEstimationError = (error: any, attempt: number): void => {
+  if (isGasLimitError(error)) {
+    console.warn(`Gas limit error on attempt ${attempt + 1}:`, error.message)
+    // Log additional context for debugging
+    console.warn('This might indicate insufficient gas buffer or complex transaction')
+  } else {
+    console.warn(`Gas estimation attempt ${attempt + 1} failed:`, error)
+  }
 }
 
 // Fallback gas estimation using Safe Gateway API
@@ -85,9 +158,10 @@ const estimateGasViaGateway = async (
       operation: safeTx.data.operation as any,
     })
 
-    // Convert to bigint and add safety buffer
+    // Convert to bigint and add dynamic safety buffer
     const estimatedGas = BigInt(estimation.safeTxGas || '21000')
-    return (estimatedGas * BigInt(Math.floor(SAFETY_BUFFER_MULTIPLIER * 100))) / BigInt(100)
+    const dynamicBuffer = getDynamicSafetyBuffer(safeTx)
+    return (estimatedGas * BigInt(Math.floor(dynamicBuffer * 100))) / BigInt(100)
   } catch (error) {
     console.warn('Gateway gas estimation failed:', error)
     throw error
@@ -109,7 +183,9 @@ const getConservativeGasEstimate = (safeTx: SafeTransaction): bigint => {
   // Add safety buffer
   const totalGas = baseGas + dataGas + valueGas + CONSERVATIVE_GAS_LIMIT
 
-  return (totalGas * BigInt(Math.floor(SAFETY_BUFFER_MULTIPLIER * 100))) / BigInt(100)
+  // Use dynamic buffer for conservative estimation
+  const dynamicBuffer = getDynamicSafetyBuffer(safeTx)
+  return (totalGas * BigInt(Math.floor(dynamicBuffer * 100))) / BigInt(100)
 }
 
 /**
@@ -200,7 +276,6 @@ const estimateGasWithRetry = async (
   safeSDK: Safe,
   safeTx: SafeTransaction,
   currentChainId: string,
-  hasSafeTxGas: boolean,
 ): Promise<bigint> => {
   // Method 1: Try RPC estimation with retries
   for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
@@ -212,14 +287,14 @@ const estimateGasWithRetry = async (
       })
 
       // Apply chain-specific adjustments
-      if (currentChainId === chains.gno && hasSafeTxGas) {
-        return incrementByGasMultiplier(gasLimit, GasMultipliers[chains.gno])
-      }
+      const chainAdjustment = getChainSpecificGasAdjustment(currentChainId, safeTx)
+      const adjustedGasLimit = incrementByGasMultiplier(gasLimit, chainAdjustment)
 
-      // Add safety buffer
-      return (gasLimit * BigInt(Math.floor(SAFETY_BUFFER_MULTIPLIER * 100))) / BigInt(100)
+      // Add dynamic safety buffer based on transaction complexity
+      const dynamicBuffer = getDynamicSafetyBuffer(safeTx)
+      return (adjustedGasLimit * BigInt(Math.floor(dynamicBuffer * 100))) / BigInt(100)
     } catch (error) {
-      console.warn(`Gas estimation attempt ${attempt + 1} failed:`, error)
+      handleGasEstimationError(error, attempt)
 
       if (attempt < RETRY_ATTEMPTS - 1) {
         await sleep(getRetryDelay(attempt))
@@ -256,7 +331,6 @@ const useGasLimit = (
   const walletAddress = wallet?.address
   const isOwner = useIsSafeOwner()
   const currentChainId = useChainId()
-  const hasSafeTxGas = !!safeTx?.data?.safeTxGas
 
   const [gasLimit, gasLimitError, gasLimitLoading] = useAsync<bigint | undefined>(async () => {
     if (!safeAddress || !walletAddress || !safeSDK || !web3ReadOnly || !safeTx) return
@@ -282,24 +356,20 @@ const useGasLimit = (
       safeSDK,
       safeTx,
       currentChainId,
-      hasSafeTxGas,
     )
-  }, [
-    safeAddress,
-    walletAddress,
-    safeSDK,
-    web3ReadOnly,
-    safeTx,
-    isOwner,
-    currentChainId,
-    hasSafeTxGas,
-    threshold,
-    safe,
-  ])
+  }, [safeAddress, walletAddress, safeSDK, web3ReadOnly, safeTx, isOwner, currentChainId, threshold, safe])
 
   useEffect(() => {
     if (gasLimitError) {
       logError(Errors._612, gasLimitError.message)
+
+      // Provide additional context for gas-related errors
+      if (isGasLimitError(gasLimitError)) {
+        console.warn('Gas estimation failed. Consider:')
+        console.warn('1. Increasing gas limit manually')
+        console.warn('2. Breaking complex transactions into smaller ones')
+        console.warn('3. Checking if the transaction parameters are correct')
+      }
     }
   }, [gasLimitError])
 
