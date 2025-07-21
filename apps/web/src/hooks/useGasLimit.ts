@@ -19,6 +19,7 @@ import {
 } from '@safe-global/protocol-kit/dist/src/contracts/safeDeploymentContracts'
 import { type JsonRpcProvider } from 'ethers'
 import { type ExtendedSafeInfo } from '@/store/safeInfoSlice'
+import { postSafeGasEstimation } from '@safe-global/safe-gateway-typescript-sdk'
 
 const getEncodedSafeTx = (
   safeSDK: Safe,
@@ -54,6 +55,63 @@ const incrementByGasMultiplier = (value: bigint, multiplier: number) => {
   return (value * BigInt(100 * multiplier)) / BigInt(100)
 }
 
+// Retry configuration
+const RETRY_ATTEMPTS = 3
+const RETRY_DELAY_BASE = 1000 // 1 second
+const SAFETY_BUFFER_MULTIPLIER = 1.2 // 20% safety buffer
+const CONSERVATIVE_GAS_LIMIT = 500000n // Conservative fallback gas limit
+
+// Exponential backoff delay
+const getRetryDelay = (attempt: number): number => {
+  return RETRY_DELAY_BASE * Math.pow(2, attempt)
+}
+
+// Sleep utility
+const sleep = (ms: number): Promise<void> => {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+// Fallback gas estimation using Safe Gateway API
+const estimateGasViaGateway = async (
+  chainId: string,
+  safeAddress: string,
+  safeTx: SafeTransaction,
+): Promise<bigint> => {
+  try {
+    const estimation = await postSafeGasEstimation(chainId, safeAddress, {
+      to: safeTx.data.to,
+      value: safeTx.data.value,
+      data: safeTx.data.data,
+      operation: safeTx.data.operation as any,
+    })
+
+    // Convert to bigint and add safety buffer
+    const estimatedGas = BigInt(estimation.safeTxGas || '21000')
+    return (estimatedGas * BigInt(Math.floor(SAFETY_BUFFER_MULTIPLIER * 100))) / BigInt(100)
+  } catch (error) {
+    console.warn('Gateway gas estimation failed:', error)
+    throw error
+  }
+}
+
+// Conservative gas estimation as last resort
+const getConservativeGasEstimate = (safeTx: SafeTransaction): bigint => {
+  // Base gas for Safe transaction
+  const baseGas = 21000n
+
+  // Add gas for data length (4 gas per byte)
+  const dataLength = safeTx.data.data ? BigInt(safeTx.data.data.length - 2) / BigInt(2) : 0n
+  const dataGas = dataLength * 4n
+
+  // Add gas for value transfer if any
+  const valueGas = safeTx.data.value && safeTx.data.value !== '0' ? 9000n : 0n
+
+  // Add safety buffer
+  const totalGas = baseGas + dataGas + valueGas + CONSERVATIVE_GAS_LIMIT
+
+  return (totalGas * BigInt(Math.floor(SAFETY_BUFFER_MULTIPLIER * 100))) / BigInt(100)
+}
+
 /**
  * Estimates the gas limit for a transaction that will be executed on the zkSync network.
  *
@@ -83,7 +141,7 @@ const getGasLimitForZkSync = async (
   web3: JsonRpcProvider,
   safeSDK: Safe,
   safeTx: SafeTransaction,
-) => {
+): Promise<bigint> => {
   // use a random EOA address as the from address
   // https://github.com/zkSync-Community-Hub/zksync-developers/discussions/144
   const fakeEOAFromAddress = '0x330d9F4906EDA1f73f668660d1946bea71f48827'
@@ -132,6 +190,56 @@ const getGasLimitForZkSync = async (
   return BigInt(gas) + baseGas
 }
 
+// Enhanced gas estimation with retry logic and fallbacks
+const estimateGasWithRetry = async (
+  web3ReadOnly: JsonRpcProvider,
+  safeAddress: string,
+  walletAddress: string,
+  encodedSafeTx: string,
+  safe: ExtendedSafeInfo,
+  safeSDK: Safe,
+  safeTx: SafeTransaction,
+  currentChainId: string,
+  hasSafeTxGas: boolean,
+): Promise<bigint> => {
+  // Method 1: Try RPC estimation with retries
+  for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
+    try {
+      const gasLimit = await web3ReadOnly.estimateGas({
+        to: safeAddress,
+        from: walletAddress,
+        data: encodedSafeTx,
+      })
+
+      // Apply chain-specific adjustments
+      if (currentChainId === chains.gno && hasSafeTxGas) {
+        return incrementByGasMultiplier(gasLimit, GasMultipliers[chains.gno])
+      }
+
+      // Add safety buffer
+      return (gasLimit * BigInt(Math.floor(SAFETY_BUFFER_MULTIPLIER * 100))) / BigInt(100)
+    } catch (error) {
+      console.warn(`Gas estimation attempt ${attempt + 1} failed:`, error)
+
+      if (attempt < RETRY_ATTEMPTS - 1) {
+        await sleep(getRetryDelay(attempt))
+      }
+    }
+  }
+
+  // Method 2: Try Safe Gateway API
+  try {
+    console.log('Falling back to Safe Gateway API for gas estimation')
+    return await estimateGasViaGateway(safe.chainId, safeAddress, safeTx)
+  } catch (error) {
+    console.warn('Safe Gateway gas estimation failed:', error)
+  }
+
+  // Method 3: Use conservative estimation
+  console.log('Using conservative gas estimation as fallback')
+  return getConservativeGasEstimate(safeTx)
+}
+
 const useGasLimit = (
   safeTx?: SafeTransaction,
 ): {
@@ -165,21 +273,17 @@ const useGasLimit = (
       return getGasLimitForZkSync(safe, web3ReadOnly, safeSDK, safeTx)
     }
 
-    return web3ReadOnly
-      .estimateGas({
-        to: safeAddress,
-        from: walletAddress,
-        data: encodedSafeTx,
-      })
-      .then((gasLimit) => {
-        // Due to a bug in Nethermind estimation, we need to increment the gasLimit by 30%
-        // when the safeTxGas is defined and not 0. Currently Nethermind is used only for Gnosis Chain.
-        if (currentChainId === chains.gno && hasSafeTxGas) {
-          return incrementByGasMultiplier(gasLimit, GasMultipliers[chains.gno])
-        }
-
-        return gasLimit
-      })
+    return estimateGasWithRetry(
+      web3ReadOnly,
+      safeAddress,
+      walletAddress,
+      encodedSafeTx!,
+      safe,
+      safeSDK,
+      safeTx,
+      currentChainId,
+      hasSafeTxGas,
+    )
   }, [
     safeAddress,
     walletAddress,

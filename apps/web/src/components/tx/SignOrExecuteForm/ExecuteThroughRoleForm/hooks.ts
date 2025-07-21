@@ -54,7 +54,9 @@ export const useMetaTransactions = (safeTx?: SafeTransaction): MetaTransactionDa
         if (baseTransactions.length > 0) {
           return baseTransactions.map((tx) => ({ ...tx, operation: OperationType.Call }))
         }
-      } catch (e) {}
+      } catch (e) {
+        // Ignore decode errors
+      }
     }
 
     return [metaTx]
@@ -319,6 +321,62 @@ const checkCondition = async (
   }
 }
 
+// Retry configuration for gas estimation
+const RETRY_ATTEMPTS = 3
+const RETRY_DELAY_BASE = 1000 // 1 second
+const SAFETY_BUFFER_MULTIPLIER = 1.2 // 20% safety buffer
+
+// Exponential backoff delay
+const getRetryDelay = (attempt: number): number => {
+  return RETRY_DELAY_BASE * Math.pow(2, attempt)
+}
+
+// Sleep utility
+const sleep = (ms: number): Promise<void> => {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+// Conservative gas estimation as fallback
+const getConservativeGasEstimate = (tx: Transaction): bigint => {
+  // Base gas for transaction
+  const baseGas = 21000n
+
+  // Add gas for data length (4 gas per byte)
+  const dataLength = tx.data ? BigInt(tx.data.length - 2) / BigInt(2) : 0n
+  const dataGas = dataLength * 4n
+
+  // Add gas for value transfer if any
+  const valueGas = tx.value && tx.value !== '0' ? 9000n : 0n
+
+  // Add safety buffer
+  const totalGas = baseGas + dataGas + valueGas + 100000n // Conservative buffer
+
+  return (totalGas * BigInt(Math.floor(SAFETY_BUFFER_MULTIPLIER * 100))) / BigInt(100)
+}
+
+// Enhanced gas estimation with retry logic
+const estimateGasWithRetry = async (web3ReadOnly: JsonRpcProvider, tx: Transaction): Promise<bigint> => {
+  // Try RPC estimation with retries
+  for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
+    try {
+      const gasLimit = await web3ReadOnly.estimateGas(tx)
+
+      // Add safety buffer
+      return (gasLimit * BigInt(Math.floor(SAFETY_BUFFER_MULTIPLIER * 100))) / BigInt(100)
+    } catch (error) {
+      console.warn(`Gas estimation attempt ${attempt + 1} failed:`, error)
+
+      if (attempt < RETRY_ATTEMPTS - 1) {
+        await sleep(getRetryDelay(attempt))
+      }
+    }
+  }
+
+  // Use conservative estimation as fallback
+  console.log('Using conservative gas estimation as fallback')
+  return getConservativeGasEstimate(tx)
+}
+
 export const useGasLimit = (
   tx?: Transaction,
 ): {
@@ -331,7 +389,7 @@ export const useGasLimit = (
   const [gasLimit, gasLimitError, gasLimitLoading] = useAsync<bigint | undefined>(async () => {
     if (!web3ReadOnly || !tx) return
 
-    return web3ReadOnly.estimateGas(tx)
+    return estimateGasWithRetry(web3ReadOnly, tx)
   }, [web3ReadOnly, tx])
 
   useEffect(() => {
