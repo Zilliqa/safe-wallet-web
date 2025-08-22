@@ -1,7 +1,8 @@
-import type { SafeTransaction } from '@safe-global/safe-core-sdk-types'
+import type { SafeTransaction } from '@safe-global/types-kit'
 import type { EthersError } from '@/utils/ethers-utils'
+import { Contract } from 'ethers'
 
-import useAsync from './useAsync'
+import useAsync from '@safe-global/utils/hooks/useAsync'
 import ContractErrorCodes from '@/services/contracts/ContractErrorCodes'
 import { type SafeInfo } from '@safe-global/safe-gateway-typescript-sdk'
 import { createWeb3, useWeb3ReadOnly } from '@/hooks/wallets/web3'
@@ -10,10 +11,10 @@ import { type ConnectedWallet } from '@/hooks/wallets/useOnboard'
 import { getCurrentGnosisSafeContract } from '@/services/contracts/safeContracts'
 import useSafeInfo from '@/hooks/useSafeInfo'
 import { useSigner } from '@/hooks/wallets/useWallet'
-import { encodeSignatures } from '@/services/tx/encodeSignatures'
-import useIsSafeOwner from '@/hooks/useIsSafeOwner'
 import { type NestedWallet } from '@/utils/nested-safe-wallet'
 import { assertProvider } from '@/utils/helpers'
+import { encodeSignatures } from '@/services/tx/encodeSignatures'
+import useIsSafeOwner from './useIsSafeOwner'
 
 const isContractError = (error: EthersError) => {
   if (!error.reason) return false
@@ -74,7 +75,9 @@ const useIsValidExecution = (
 
     try {
       const safeContract = await getCurrentGnosisSafeContract(safe, readOnlyProvider._getConnection().url)
-
+      const address = safeContract.getAddress()
+      const abi = safeContract.contractAbi
+      const contract = new Contract(address, abi, readOnlyProvider)
       /**
        * We need to call the contract directly instead of using `sdk.isValidTransaction`
        * because `gasLimit` errors are otherwise not propagated.
@@ -82,7 +85,7 @@ const useIsValidExecution = (
        * This also fixes the over-fetching issue of the monkey patched provider.
        */
 
-      return safeContract.contract.execTransaction
+      return contract.execTransaction
         .staticCall(
           safeTx.data.to,
           safeTx.data.value,
@@ -96,7 +99,7 @@ const useIsValidExecution = (
           encodeSignatures(safeTx, isOwner ? wallet.address : undefined, safeTx.signatures.size < threshold),
           { from: wallet.address, gasLimit: gasLimit.toString() },
         )
-        .catch((error) => {
+        .catch((error: { reason: string }) => {
           if (error.reason === 'require(false)') return true
           else throw error
         })
@@ -110,7 +113,7 @@ const useIsValidExecution = (
 
       throw err
     }
-  }, [safeTx, wallet, gasLimit, safe, readOnlyProvider, isOwner, threshold])
+  }, [safeTx, wallet, gasLimit, safe, readOnlyProvider])
 
   return { isValidExecution, executionValidationError, isValidExecutionLoading }
 }
