@@ -171,12 +171,6 @@ export const CookieAndTermBanner = ({
                   </Button>
                 </Typography>
               </Grid>
-
-              <Grid item>
-                <Button onClick={handleAcceptAll} variant="contained" color="secondary" size="small" disableElevation>
-                  Safe settings
-                </Button>
-              </Grid>
             </Grid>
           </Grid>
         </Grid>
