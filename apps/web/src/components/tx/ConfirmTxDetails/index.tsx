@@ -39,9 +39,7 @@ const InfoSteps = [
   {
     label: 'Verify with external tools',
     description: (
-      <Typography>
-        You can additionally cross-verify your transaction data in a third-party tools.
-      </Typography>
+      <Typography>You can additionally cross-verify your transaction data in a third-party tools.</Typography>
     ),
   },
 ]

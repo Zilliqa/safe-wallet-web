@@ -40,9 +40,7 @@ const InfoSteps = [
   {
     label: 'Verify with external tools',
     description: (
-      <Typography>
-        You can additionally cross-verify your transaction data in a third-party tools.
-      </Typography>
+      <Typography>You can additionally cross-verify your transaction data in a third-party tools.</Typography>
     ),
   },
 ]
@@ -100,7 +98,7 @@ export const ConfirmTxReceipt = ({ children, onSubmit }: PropsWithChildren<{ onS
           <Sign
             onSubmitSuccess={onSubmit}
             options={[{ id: 'sign', label: 'Sign' }]}
-            onChange={() => { }}
+            onChange={() => {}}
             slotId="sign"
           />
         </Slot>
