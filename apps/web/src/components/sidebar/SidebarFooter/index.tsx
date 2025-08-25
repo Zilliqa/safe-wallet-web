@@ -8,17 +8,18 @@ import { CookieAndTermType, hasConsentFor } from '@/store/cookiesAndTermsSlice'
 //import { openCookieBanner } from '@/store/popupSlice'
 //import BeamerIcon from '@/public/images/sidebar/whats-new.svg'
 import HelpCenterIcon from '@/public/images/sidebar/help-center.svg'
-import { Divider, Link, ListItem, SvgIcon, Typography } from '@mui/material'
+import { Box, Divider, Link, ListItem, SvgIcon, Typography, useTheme } from '@mui/material'
 import DebugToggle from '../DebugToggle'
-import { HELP_CENTER_URL, IS_PRODUCTION } from '@/config/constants'
+import { HELP_CENTER_URL, IS_PRODUCTION, NEW_SUGGESTION_FORM } from '@/config/constants'
 import { useCurrentChain } from '@/hooks/useChains'
 import darkPalette from '@/components/theme/darkPalette'
-//import SuggestionIcon from '@/public/images/sidebar/lightbulb_icon.svg'
+import SuggestionIcon from '@/public/images/sidebar/lightbulb_icon.svg'
 import ProtofireLogo from '@/public/images/protofire-logo.svg'
 
 const SidebarFooter = (): ReactElement => {
   //const dispatch = useAppDispatch()
   const chain = useCurrentChain()
+  const theme = useTheme()
   const hasBeamerConsent = useAppSelector((state) => hasConsentFor(state, CookieAndTermType.UPDATES))
 
   useEffect(() => {
@@ -68,6 +69,32 @@ const SidebarFooter = (): ReactElement => {
             <SidebarListItemText data-testid="list-item-need-help" bold>
               Need help?
             </SidebarListItemText>
+          </SidebarListItemButton>
+        </a>
+      </ListItem>
+      <ListItem style={{ padding: '0 var(--space-1) 0' }}>
+        <a target="_blank" rel="noopener noreferrer" href={NEW_SUGGESTION_FORM} style={{ width: '100%' }}>
+          <SidebarListItemButton
+            style={{
+              color: 'black',
+              backgroundColor:
+                theme.palette.mode === 'dark' ? theme.palette.primary.main : theme.palette.secondary.main,
+            }}
+          >
+            <SidebarListItemIcon>
+              <Box
+                sx={{
+                  '& svg': {
+                    '& path': () => ({
+                      fill: 'black !important',
+                    }),
+                  },
+                }}
+              >
+                <SuggestionIcon />
+              </Box>
+            </SidebarListItemIcon>
+            <SidebarListItemText bold>New Features Suggestion?</SidebarListItemText>
           </SidebarListItemButton>
         </a>
       </ListItem>
