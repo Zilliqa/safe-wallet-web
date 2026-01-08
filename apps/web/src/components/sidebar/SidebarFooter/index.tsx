@@ -5,7 +5,6 @@ import { SidebarListItemButton, SidebarListItemIcon, SidebarListItemText } from 
 import { /* BEAMER_SELECTOR, */ loadBeamer } from '@/services/beamer'
 import { useAppSelector } from '@/store'
 import { CookieAndTermType, hasConsentFor } from '@/store/cookiesAndTermsSlice'
-//import { openCookieBanner } from '@/store/popupSlice'
 //import BeamerIcon from '@/public/images/sidebar/whats-new.svg'
 import HelpCenterIcon from '@/public/images/sidebar/help-center.svg'
 import { Box, Divider, Link, ListItem, SvgIcon, Typography, useTheme } from '@mui/material'
