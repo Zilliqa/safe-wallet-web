@@ -9,7 +9,7 @@ const TEMPLATE_CONFIG = {
   SUPPORTED_VERSIONS: ['1.3.0', '1.4.1'],
   SAFE_UTILS_SUPPORTED: false,
   EXTRA_FOOTER_LINKS: [],
-  IS_LICENSED: true,
+  IS_LICENSED: false,
   LOGO_DIMENSIONS: {
     HEADER: {
       H: '40px',
